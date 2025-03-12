@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Thi Trắc Nghiệm Demo</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="questions.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Thông tin cá nhân -->
+        <div id="info-section" class="quiz-app">
+            <h2>Thông tin cá nhân</h2>
+            <form id="info-form">
+                <div class="form-group">
+                    <label for="fullname">Họ và tên:</label>
+                    <input type="text" id="fullname" required>
+                </div>
+                <div class="form-group">
+                    <label for="birthdate">Ngày sinh:</label>
+                    <input type="date" id="birthdate" required>
+                </div>
+                <div class="form-group">
+                    <label for="studentType">Số CCCD:</label>
+                    <input type="text" id="idnumber" required>
+                </div>
+                <div class="form-group">
+                    <label for="class">Địa chỉ thường trú</label>
+                    <input type="text" id="address" required>
+                </div>
+                <button type="submit" class="btn-primary">Bắt đầu làm bài</button>
+            </form>
+        </div>
+        
+        <!-- Phần câu hỏi thi -->
+        <div id="quiz-section" class="quiz-app" style="display:none;">
+            <h2>Chương trình thi trắc nghiệm</h2>
+            <form id="quiz-form">
+                <!-- Nhóm 1: Đúng/Sai -->
+                <div class="question-group">
+                    <h3>Nhóm 1: Lựa chọn đúng/sai</h3>
+                </div>
+                
+                <!-- Nhóm 2: Chọn 1 đáp án -->
+                <div class="question-group">
+                    <h3>Nhóm 2: Chọn 1 đáp án đúng</h3>
+                </div>
+                
+                <!-- Nhóm 3: Chọn nhiều đáp án -->
+                <div class="question-group">
+                    <h3>Nhóm 3: Chọn nhiều đáp án đúng</h3>
+                </div>
+                
+                <!-- Nhóm 4: Tự luận -->
+                <div class="question-group">
+                    <h3>Nhóm 4: Trả lời tự luận</h3>
+                </div>
+                
+                <button type="submit" class="btn-primary">Nộp bài</button>
+            </form>
+        </div>
+        
+        <!-- Phần hiển thị kết quả -->
+        <div id="result-section" class="quiz-app" style="display:none;">
+            <h2>Kết quả bài làm</h2>
+            <div id="result-content">
+                <!-- Chi tiết kết quả sẽ được hiện tại đây -->
+            </div>
+            <button onclick="location.reload()" class="btn-primary">Làm bài lại</button>
+        </div>
+    </div>
+    
+    <script>
+        // Hàm tạo câu hỏi từ dữ liệu
+        function renderQuestions() {
+            const quizForm = document.getElementById('quiz-form');
+            
+            // Render nhóm 1 - Đúng/sai
+            const group1Html = questions.group1.map((q, i) => `
+                <div class="question">
+                    <p>Câu ${i + 1}: ${q.question}</p>
+                    <div>
+                        <input type="radio" name="q${i + 1}" value="true" required> Đúng
+                        <input type="radio" name="q${i + 1}" value="false"> Sai
+                    </div>
+                </div>
+            `).join('');
+            document.querySelector('#quiz-form .question-group:nth-child(1)').innerHTML += group1Html;
+
+            // Render nhóm 2 - Trắc nghiệm
+            const group2Html = questions.group2.map((q, i) => `
+                <div class="question">
+                    <p>Câu ${i + 11}: ${q.question}</p>
+                    <div class="options">
+                        ${q.options.map((opt, j) => `
+                            <div>
+                                <input type="radio" name="q${i + 11}" value="${String.fromCharCode(65 + j)}" required>
+                                ${opt}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+            document.querySelector('#quiz-form .question-group:nth-child(2)').innerHTML += group2Html;
+
+            // Render nhóm 3 - Nhiều đáp án
+            const group3Html = questions.group3.map((q, i) => `
+                <div class="question">
+                    <p>Câu ${i + 21}: ${q.question}</p>
+                    <div class="options">
+                        ${q.options.map((opt, j) => `
+                            <div>
+                                <input type="checkbox" name="q${i + 21}" value="${String.fromCharCode(65 + j)}">
+                                ${opt}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+            document.querySelector('#quiz-form .question-group:nth-child(3)').innerHTML += group3Html;
+
+            // Render nhóm 4 - Tự luận
+            const group4Html = questions.group4.map((q, i) => `
+                <div class="question">
+                    <p>Câu ${i + 31}: ${q.question}</p>
+                    <textarea name="q${i + 31}" rows="4" required></textarea>
+                </div>
+            `).join('');
+            document.querySelector('#quiz-form .question-group:nth-child(4)').innerHTML += group4Html;
+        }
+
+        // Hàm tính điểm
+        function calculateScore(formData) {
+            let score = 0;
+            let total = 30; // Chỉ tính điểm cho 30 câu (không tính tự luận)
+            
+            // Chấm điểm nhóm 1
+            questions.group1.forEach((q, i) => {
+                if (formData.get(`q${i + 1}`) === q.answer.toString()) score++;
+            });
+
+            // Chấm điểm nhóm 2
+            questions.group2.forEach((q, i) => {
+                if (formData.get(`q${i + 11}`) === q.answer) score++;
+            });
+
+            // Chấm điểm nhóm 3
+            questions.group3.forEach((q, i) => {
+                const userAnswers = Array.from(formData.getAll(`q${i + 21}`)).sort();
+                const correctAnswers = q.answers.sort();
+                if (JSON.stringify(userAnswers) === JSON.stringify(correctAnswers)) {
+                    score++;
+                }
+            });
+
+            // Nhóm 4 không chấm điểm tự động
+
+            return {
+                score: score,
+                total: total,
+                percentage: (score / total) * 100
+            };
+        }
+
+        // Cập nhật event listeners
+        document.getElementById('quiz-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const result = calculateScore(formData);
+            
+            let essayAnswers = '<h4>Câu trả lời tự luận:</h4>';
+            questions.group4.forEach((q, i) => {
+                const answer = formData.get(`q${i + 31}`);
+                essayAnswers += `
+                    <div class="essay-answer">
+                        <p><strong>Câu ${i + 31}:</strong> ${q.question}</p>
+                        <p><strong>Trả lời:</strong> ${answer}</p>
+                    </div>
+                `;
+            });
+
+            document.getElementById('quiz-section').style.display = 'none';
+            document.getElementById('result-section').style.display = 'block';
+            document.getElementById('result-content').innerHTML = `
+                <h3>Kết quả chi tiết</h3>
+                <p>Số câu đúng (không tính tự luận): ${result.score}/${result.total}</p>
+                <p>Tỷ lệ đúng: ${result.percentage.toFixed(2)}%</p>
+                ${essayAnswers}
+            `;
+        });
+
+        // Khởi tạo câu hỏi khi form thông tin được submit
+        document.getElementById('info-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            document.getElementById('info-section').style.display = 'none';
+            document.getElementById('quiz-section').style.display = 'block';
+            renderQuestions();
+        });
+    </script>
+</body>
+</html>
